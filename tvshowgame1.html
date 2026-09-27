@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Show Challenge - Primary 4 English Game</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Quicksand for playful primary school typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #fef3c7 100%);
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        .font-heading {
+            font-family: 'Fredoka', cursive;
+        }
+
+        /* TV Frame styling */
+        .tv-frame {
+            border: 12px solid #334155;
+            border-radius: 28px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1), inset 0 0 15px rgba(0,0,0,0.2);
+            background-color: #0f172a;
+            position: relative;
+        }
+
+        .tv-antenna {
+            position: absolute;
+            top: -38px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 0;
+        }
+
+        .tv-antenna-line-left {
+            width: 6px;
+            height: 40px;
+            background-color: #64748b;
+            transform: rotate(-30deg);
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+
+        .tv-antenna-line-right {
+            width: 6px;
+            height: 40px;
+            background-color: #64748b;
+            transform: rotate(30deg);
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+
+        /* Custom interactive button animations */
+        .btn-bounce {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-bounce:hover {
+            transform: translateY(-3px) scale(1.02);
+        }
+        .btn-bounce:active {
+            transform: translateY(2px) scale(0.98);
+        }
+
+        /* Shake animation for wrong feedback */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .animate-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* Pulse highlight */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            80% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .animate-pop-in {
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Confetti Canvas overlay */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* On-screen letter keys styling */
+        .key-tile {
+            font-family: 'Fredoka', cursive;
+            transition: all 0.1s ease;
+        }
+        .key-tile:active {
+            transform: scale(0.92);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden text-slate-800">
+    <!-- Confetti canvas overlay -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Navigation Header -->
+    <header class="bg-white/80 backdrop-blur-md border-b-4 border-amber-300 shadow-sm px-4 py-3 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-2">
+            <!-- Game Title & Home button -->
+            <div class="flex items-center gap-3">
+                <button id="btn-home" onclick="goToHome()" title="Go Home" class="bg-amber-400 hover:bg-amber-500 text-slate-900 p-2.5 rounded-2xl shadow-md border-b-4 border-amber-600 font-bold btn-bounce flex items-center gap-1.5 text-base">
+                    <span>🏠</span> <span class="hidden sm:inline font-heading">Home</span>
+                </button>
+                <div class="flex flex-col">
+                    <h1 class="font-heading text-xl sm:text-2xl text-blue-600 tracking-wide flex items-center gap-2">
+                        📺 TV Show Challenge
+                    </h1>
+                    <span id="level-subtitle" class="text-xs sm:text-sm font-semibold text-slate-500">
+                        Primary 4 English Vocabulary
+                    </span>
+                </div>
+            </div>
+
+            <!-- Score & Sound Controls -->
+            <div class="flex items-center gap-3">
+                <!-- Stars / Points badge -->
+                <div class="bg-amber-100 border-2 border-amber-400 text-amber-800 px-3 py-1.5 rounded-full flex items-center gap-1.5 font-bold shadow-inner text-base">
+                    <span class="text-xl">⭐</span>
+                    <span id="score-display" class="font-heading text-lg">0</span>
+                    <span class="text-xs text-amber-600 font-semibold uppercase">pts</span>
+                </div>
+
+                <!-- Speech Audio Toggle -->
+                <button id="btn-sound" onclick="toggleSound()" title="Toggle Sound" class="bg-sky-100 hover:bg-sky-200 text-sky-700 border-2 border-sky-300 p-2.5 rounded-2xl shadow-sm font-bold btn-bounce text-lg">
+                    🔊
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-3 sm:p-6 flex flex-col justify-center">
+
+        <!-- ================= HOME / MENU SCREEN ================= -->
+        <section id="screen-home" class="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border-4 border-sky-200 text-center animate-pop-in">
+            <div class="inline-block bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider mb-3">
+                P4 ESL Vocabulary Game
+            </div>
+            <h2 class="font-heading text-3xl sm:text-5xl text-blue-600 mb-4 tracking-wide">
+                Welcome to TV Show Challenge! 📺
+            </h2>
+            <p class="text-base sm:text-lg text-slate-600 max-w-xl mx-auto mb-8 font-medium leading-relaxed">
+                Learn TV show names and cool adjectives. Choose a level or play through the whole show!
+            </p>
+
+            <!-- Level Selector Buttons -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
+                <!-- Level 1 -->
+                <button onclick="startLevel(1)" class="bg-emerald-500 hover:bg-emerald-600 text-white border-b-8 border-emerald-700 p-5 rounded-2xl shadow-lg btn-bounce flex items-center justify-between text-left group">
+                    <div>
+                        <div class="text-xs font-bold uppercase text-emerald-100 tracking-wider">Level 1</div>
+                        <div class="font-heading text-xl sm:text-2xl text-white">Guess the Show 🔍</div>
+                        <div class="text-xs text-emerald-100 mt-1">Choose the correct answer</div>
+                    </div>
+                    <span class="text-3xl group-hover:scale-125 transition-transform">➡️</span>
+                </button>
+
+                <!-- Level 2 -->
+                <button onclick="startLevel(2)" class="bg-sky-500 hover:bg-sky-600 text-white border-b-8 border-sky-700 p-5 rounded-2xl shadow-lg btn-bounce flex items-center justify-between text-left group">
+                    <div>
+                        <div class="text-xs font-bold uppercase text-sky-100 tracking-wider">Level 2</div>
+                        <div class="font-heading text-xl sm:text-2xl text-white">Spell the Show ✏️</div>
+                        <div class="text-xs text-sky-100 mt-1">Type or build the phrase</div>
+                    </div>
+                    <span class="text-3xl group-hover:scale-125 transition-transform">➡️</span>
+                </button>
+
+                <!-- Level 3 -->
+                <button onclick="startLevel(3)" class="bg-purple-500 hover:bg-purple-600 text-white border-b-8 border-purple-700 p-5 rounded-2xl shadow-lg btn-bounce flex items-center justify-between text-left group">
+                    <div>
+                        <div class="text-xs font-bold uppercase text-purple-100 tracking-wider">Level 3</div>
+                        <div class="font-heading text-xl sm:text-2xl text-white">Describe the Show 💭</div>
+                        <div class="text-xs text-purple-100 mt-1">Pick the right adjective</div>
+                    </div>
+                    <span class="text-3xl group-hover:scale-125 transition-transform">➡️</span>
+                </button>
+
+                <!-- Final Challenge -->
+                <button onclick="startLevel(4)" class="bg-amber-500 hover:bg-amber-600 text-white border-b-8 border-amber-700 p-5 rounded-2xl shadow-lg btn-bounce flex items-center justify-between text-left group">
+                    <div>
+                        <div class="text-xs font-bold uppercase text-amber-100 tracking-wider">Final Challenge</div>
+                        <div class="font-heading text-xl sm:text-2xl text-white">My TV Review 📝</div>
+                        <div class="text-xs text-amber-100 mt-1">Write a full sentence review</div>
+                    </div>
+                    <span class="text-3xl group-hover:scale-125 transition-transform">🌟</span>
+                </button>
+            </div>
+
+            <!-- Start All Button -->
+            <button onclick="startLevel(1)" class="w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white font-heading text-xl px-10 py-4 rounded-2xl shadow-xl border-b-6 border-rose-700 btn-bounce">
+                🚀 Start Full Game (Levels 1 - 4)
+            </button>
+        </section>
+
+        <!-- ================= GAME PLAY SCREEN ================= -->
+        <section id="screen-game" class="hidden flex-col gap-4">
+
+            <!-- Level Header / Progress Bar -->
+            <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-md border-2 border-slate-200 flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span id="level-badge" class="bg-blue-600 text-white text-xs sm:text-sm font-bold px-3 py-1 rounded-full uppercase">
+                        Level 1
+                    </span>
+                    <h3 id="question-prompt" class="font-heading text-lg sm:text-xl text-slate-800">
+                        What show is it?
+                    </h3>
+                </div>
+
+                <!-- Progress Counter -->
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="flex-1 sm:w-36 bg-slate-100 rounded-full h-3.5 border border-slate-200 overflow-hidden">
+                        <div id="progress-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 10%"></div>
+                    </div>
+                    <span id="progress-text" class="font-bold text-sm text-slate-600 min-w-[45px]">1 / 10</span>
+                </div>
+            </div>
+
+            <!-- TV Screen Display Box -->
+            <div class="tv-frame p-3 sm:p-5 flex flex-col items-center">
+                <!-- Antenna visual -->
+                <div class="tv-antenna">
+                    <div class="tv-antenna-line-left"></div>
+                    <div class="tv-antenna-line-right"></div>
+                </div>
+
+                <!-- SVG Illustration Frame -->
+                <div id="tv-screen-content" class="w-full max-w-xl aspect-[4/3] bg-sky-950 rounded-xl overflow-hidden border-4 border-slate-700 relative flex items-center justify-center shadow-inner">
+                    <!-- Dynamic SVG inserted here via JS -->
+                </div>
+
+                <!-- Audio Read Aloud button for Question -->
+                <button id="btn-read-word" onclick="speakCurrentTarget()" class="mt-3 bg-slate-800 hover:bg-slate-700 text-amber-300 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 border border-slate-600 btn-bounce">
+                    <span>🔊 Speak / Listen</span>
+                </button>
+            </div>
+
+            <!-- Feedback Alert Banner -->
+            <div id="feedback-banner" class="hidden rounded-2xl p-4 text-center font-heading text-lg sm:text-xl shadow-md transition-all animate-pop-in">
+                <!-- Feedback message injected here -->
+            </div>
+
+            <!-- LEVEL 1 CONTROLS: Multiple Choice -->
+            <div id="control-level1" class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-2">
+                <button onclick="checkLevel1(0)" id="opt-0" class="opt-btn bg-white hover:bg-sky-50 text-slate-800 border-4 border-sky-300 hover:border-sky-500 p-4 rounded-2xl font-heading text-lg sm:text-xl shadow-md btn-bounce text-center">
+                    A. a cartoon
+                </button>
+                <button onclick="checkLevel1(1)" id="opt-1" class="opt-btn bg-white hover:bg-sky-50 text-slate-800 border-4 border-sky-300 hover:border-sky-500 p-4 rounded-2xl font-heading text-lg sm:text-xl shadow-md btn-bounce text-center">
+                    B. a cooking show
+                </button>
+                <button onclick="checkLevel1(2)" id="opt-2" class="opt-btn bg-white hover:bg-sky-50 text-slate-800 border-4 border-sky-300 hover:border-sky-500 p-4 rounded-2xl font-heading text-lg sm:text-xl shadow-md btn-bounce text-center">
+                    C. a sports show
+                </button>
+            </div>
+
+            <!-- LEVEL 2 CONTROLS: Typing & Word Building -->
+            <div id="control-level2" class="hidden flex-col gap-3 my-2">
+                <!-- Hint Box / Text Display -->
+                <div class="bg-white rounded-2xl p-4 border-4 border-sky-300 shadow-sm flex flex-col items-center gap-3">
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Write the TV Show Phrase:</div>
+                    
+                    <!-- Formatted Word Slots / Output -->
+                    <div id="spelling-display" class="font-heading text-2xl sm:text-3xl text-blue-700 tracking-wider min-h-[44px] flex items-center justify-center flex-wrap gap-2">
+                        <!-- Display text or slot boxes -->
+                    </div>
+
+                    <!-- Direct Text Box Input for physical typing -->
+                    <div class="w-full max-w-md flex gap-2">
+                        <input type="text" id="spelling-input" placeholder="Type answer here..." 
+                               class="flex-1 px-4 py-3 rounded-xl border-2 border-slate-300 focus:border-sky-500 font-heading text-lg sm:text-xl text-center outline-none shadow-inner"
+                               onkeyup="handleSpellingInput(event)">
+                        <button onclick="clearSpellingInput()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-xl text-sm font-bold btn-bounce">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- On-screen letter keys for Interactive Whiteboards/Tablets -->
+                <div id="letter-bank" class="bg-slate-100 rounded-2xl p-3 border-2 border-slate-200 flex flex-wrap justify-center gap-1.5 sm:gap-2">
+                    <!-- Injected clickable letter tiles -->
+                </div>
+
+                <!-- Action Buttons: Hint & Submit -->
+                <div class="flex justify-between items-center gap-3">
+                    <button id="btn-hint" onclick="showSpellingHint()" class="bg-amber-400 hover:bg-amber-500 text-slate-900 border-b-4 border-amber-600 px-5 py-3 rounded-2xl font-heading text-base sm:text-lg shadow-md btn-bounce flex items-center gap-2">
+                        💡 Hint
+                    </button>
+                    <button onclick="checkLevel2()" class="bg-emerald-500 hover:bg-emerald-600 text-white border-b-4 border-emerald-700 px-8 py-3 rounded-2xl font-heading text-base sm:text-lg shadow-md btn-bounce">
+                        Check Answer ✔️
+                    </button>
+                </div>
+            </div>
+
+            <!-- LEVEL 3 CONTROLS: Describe the Show -->
+            <div id="control-level3" class="hidden flex-col gap-3 my-2">
+                <p class="text-center text-sm font-bold text-slate-600">Choose the best adjective to describe this show:</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <button onclick="checkLevel3('informative')" class="adj-btn bg-white hover:bg-blue-50 text-blue-800 border-4 border-blue-200 hover:border-blue-400 p-3.5 rounded-2xl font-heading text-lg shadow-md btn-bounce flex items-center justify-center gap-2">
+                        🧠 informative
+                    </button>
+                    <button onclick="checkLevel3('exciting')" class="adj-btn bg-white hover:bg-orange-50 text-orange-800 border-4 border-orange-200 hover:border-orange-400 p-3.5 rounded-2xl font-heading text-lg shadow-md btn-bounce flex items-center justify-center gap-2">
+                        ⚡ exciting
+                    </button>
+                    <button onclick="checkLevel3('interesting')" class="adj-btn bg-white hover:bg-emerald-50 text-emerald-800 border-4 border-emerald-200 hover:border-emerald-400 p-3.5 rounded-2xl font-heading text-lg shadow-md btn-bounce flex items-center justify-center gap-2">
+                        ✨ interesting
+                    </button>
+                    <button onclick="checkLevel3('touching')" class="adj-btn bg-white hover:bg-pink-50 text-pink-800 border-4 border-pink-200 hover:border-pink-400 p-3.5 rounded-2xl font-heading text-lg shadow-md btn-bounce flex items-center justify-center gap-2">
+                        💖 touching
+                    </button>
+                    <button onclick="checkLevel3('boring')" class="adj-btn bg-white hover:bg-slate-100 text-slate-700 border-4 border-slate-300 hover:border-slate-400 p-3.5 rounded-2xl font-heading text-lg shadow-md btn-bounce flex items-center justify-center gap-2">
+                        😴 boring
+                    </button>
+                    <button onclick="checkLevel3('silly')" class="adj-btn bg-white hover:bg-purple-50 text-purple-800 border-4 border-purple-200 hover:border-purple-400 p-3.5 rounded-2xl font-heading text-lg shadow-md btn-bounce flex items-center justify-center gap-2">
+                        🤪 silly
+                    </button>
+                </div>
+            </div>
+
+            <!-- LEVEL 4 CONTROLS: My TV Review Sentence Builder -->
+            <div id="control-level4" class="hidden flex-col gap-4 my-2">
+                <div class="bg-white rounded-2xl p-5 border-4 border-amber-300 shadow-md flex flex-col gap-4">
+                    <div class="text-center font-heading text-xl text-amber-800">
+                        Complete your TV Review:
+                    </div>
+
+                    <!-- Sentence Line 1 -->
+                    <div class="flex flex-wrap items-center justify-center gap-2 text-lg font-bold text-slate-800">
+                        <span>It is</span>
+                        <select id="review-show-select" class="bg-amber-50 border-2 border-amber-400 text-slate-900 rounded-xl px-3 py-2 font-heading outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="">-- Choose a TV Show --</option>
+                            <option value="the news">the news</option>
+                            <option value="the weather report">the weather report</option>
+                            <option value="a drama">a drama</option>
+                            <option value="a game show">a game show</option>
+                            <option value="a pop music show">a pop music show</option>
+                            <option value="a documentary">a documentary</option>
+                            <option value="a sports show">a sports show</option>
+                            <option value="a cartoon">a cartoon</option>
+                            <option value="a cooking show">a cooking show</option>
+                            <option value="a travel show">a travel show</option>
+                        </select>
+                        <span>.</span>
+                    </div>
+
+                    <!-- Sentence Line 2 -->
+                    <div class="flex flex-wrap items-center justify-center gap-2 text-lg font-bold text-slate-800">
+                        <span>It is</span>
+                        <select id="review-adj-select" class="bg-sky-50 border-2 border-sky-400 text-slate-900 rounded-xl px-3 py-2 font-heading outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="">-- Choose an Adjective --</option>
+                            <option value="informative">informative</option>
+                            <option value="exciting">exciting</option>
+                            <option value="interesting">interesting</option>
+                            <option value="touching">touching</option>
+                            <option value="boring">boring</option>
+                            <option value="silly">silly</option>
+                        </select>
+                        <span>.</span>
+                    </div>
+                </div>
+
+                <button onclick="checkLevel4()" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-heading text-xl py-4 rounded-2xl shadow-lg border-b-6 border-rose-700 btn-bounce">
+                    Submit My Review 🌟
+                </button>
+            </div>
+
+            <!-- Bottom Control Navigation Bar -->
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="tryAgainCurrent()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-sm btn-bounce flex items-center gap-1.5">
+                    🔄 Try again
+                </button>
+                <button id="btn-next" onclick="nextQuestion()" class="hidden bg-emerald-500 hover:bg-emerald-600 text-white font-heading text-lg px-6 py-2.5 rounded-xl shadow-md border-b-4 border-emerald-700 btn-bounce">
+                    Next ➡️
+                </button>
+            </div>
+
+        </section>
+
+        <!-- ================= END / SCORE SCREEN ================= -->
+        <section id="screen-end" class="hidden bg-white rounded-3xl p-6 sm:p-10 shadow-xl border-4 border-amber-300 text-center animate-pop-in">
+            <div class="text-6xl mb-3">🏆</div>
+            <h2 class="font-heading text-3xl sm:text-4xl text-amber-600 mb-2">
+                Great Job!
+            </h2>
+            <p class="text-slate-600 font-semibold mb-6">
+                You finished the TV Show Challenge!
+            </p>
+
+            <!-- Final Score Display -->
+            <div class="bg-amber-50 rounded-2xl p-6 border-2 border-amber-200 max-w-sm mx-auto mb-8">
+                <div class="text-sm font-bold text-amber-700 uppercase tracking-wider mb-1">Your Total Score</div>
+                <div id="final-score-text" class="font-heading text-5xl text-amber-600 my-2">
+                    28 / 31
+                </div>
+                <div id="final-rating-stars" class="text-3xl tracking-widest my-1">
+                    ⭐⭐⭐⭐⭐
+                </div>
+                <p id="final-feedback-msg" class="text-sm font-bold text-slate-700 mt-2">
+                    Vocabulary Superstar!
+                </p>
+            </div>
+
+            <!-- Review Summary Cards -->
+            <div id="review-cards-container" class="max-w-md mx-auto mb-8 text-left space-y-3 hidden">
+                <!-- User's completed review sentence will be displayed here -->
+            </div>
+
+            <!-- Play Again Buttons -->
+            <div class="flex flex-wrap justify-center gap-4">
+                <button onclick="goToHome()" class="bg-sky-500 hover:bg-sky-600 text-white font-heading text-lg px-8 py-3.5 rounded-2xl shadow-md border-b-4 border-sky-700 btn-bounce">
+                    🏠 Home Menu
+                </button>
+                <button onclick="startLevel(1)" class="bg-emerald-500 hover:bg-emerald-600 text-white font-heading text-lg px-8 py-3.5 rounded-2xl shadow-md border-b-4 border-emerald-700 btn-bounce">
+                    🔄 Play Again
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer info -->
+    <footer class="text-center py-3 text-xs font-semibold text-slate-500 border-t border-slate-200/60 bg-white/40">
+        Primary 4 ESL Interactive Vocabulary Game • TV Shows & Adjectives
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           1. DATA STRUCTURES & TARGET VOCABULARY
+           ========================================================================== */
+
+        // 10 Target TV Shows data with custom SVG generation definitions
+        const TV_SHOWS = [
+            {
+                id: 'news',
+                name: 'the news',
+                svgType: 'news',
+                distractors: ['a drama', 'a sports show'],
+                validAdjectives: ['informative', 'boring', 'interesting'],
+                hintText: 'Starts with "t... n..."'
+            },
+            {
+                id: 'weather',
+                name: 'the weather report',
+                svgType: 'weather',
+                distractors: ['a cooking show', 'a travel show'],
+                validAdjectives: ['informative', 'boring', 'interesting'],
+                hintText: 'Starts with "t... w... r..."'
+            },
+            {
+                id: 'drama',
+                name: 'a drama',
+                svgType: 'drama',
+                distractors: ['a cartoon', 'the news'],
+                validAdjectives: ['touching', 'interesting'],
+                hintText: 'Starts with "a d..."'
+            },
+            {
+                id: 'gameshow',
+                name: 'a game show',
+                svgType: 'gameshow',
+                distractors: ['a documentary', 'the weather report'],
+                validAdjectives: ['exciting', 'interesting'],
+                hintText: 'Starts with "a g... s..."'
+            },
+            {
+                id: 'popmusic',
+                name: 'a pop music show',
+                svgType: 'popmusic',
+                distractors: ['a drama', 'a cooking show'],
+                validAdjectives: ['exciting', 'silly', 'interesting'],
+                hintText: 'Starts with "a p... m... s..."'
+            },
+            {
+                id: 'documentary',
+                name: 'a documentary',
+                svgType: 'documentary',
+                distractors: ['a game show', 'a cartoon'],
+                validAdjectives: ['informative', 'interesting'],
+                hintText: 'Starts with "a d..."'
+            },
+            {
+                id: 'sportsshow',
+                name: 'a sports show',
+                svgType: 'sportsshow',
+                distractors: ['a travel show', 'the news'],
+                validAdjectives: ['exciting', 'interesting'],
+                hintText: 'Starts with "a s... s..."'
+            },
+            {
+                id: 'cartoon',
+                name: 'a cartoon',
+                svgType: 'cartoon',
+                distractors: ['a pop music show', 'a drama'],
+                validAdjectives: ['silly', 'exciting', 'interesting'],
+                hintText: 'Starts with "a c..."'
+            },
+            {
+                id: 'cookingshow',
+                name: 'a cooking show',
+                svgType: 'cookingshow',
+                distractors: ['the weather report', 'a documentary'],
+                validAdjectives: ['interesting', 'exciting'],
+                hintText: 'Starts with "a c... s..."'
+            },
+            {
+                id: 'travelshow',
+                name: 'a travel show',
+                svgType: 'travelshow',
+                distractors: ['a game show', 'a sports show'],
+                validAdjectives: ['interesting', 'informative', 'exciting'],
+                hintText: 'Starts with "a t... s..."'
+            }
+        ];
+
+        /* ==========================================================================
+           2. GAME STATE VARIABLES
+           ========================================================================== */
+        let currentLevel = 1;         // 1: Guess, 2: Spell, 3: Describe, 4: Review
+        let currentQuestionIndex = 0; // 0 to 9
+        let score = 0;
+        let hintClickCount = 0;
+        let isAudioMuted = false;
+        let questionList = [];        // Shuffled copy for current level
+        let userSpellingText = "";
+        let level1Answered = false;
+        let level3Answered = false;
+        let userReviewData = null;
+
+        /* ==========================================================================
+           3. SOUND SYNTHESIZER (Web Audio API - No external audio files needed)
+           ========================================================================== */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type = 'sine', duration = 0.15, gainVal = 0.2) {
+            if (isAudioMuted) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.log("Audio not supported or blocked", e);
+            }
+        }
+
+        function playCorrectSound() {
+            if (isAudioMuted) return;
+            playTone(523.25, 'sine', 0.12, 0.25); // C5
+            setTimeout(() => playTone(659.25, 'sine', 0.12, 0.25), 100); // E5
+            setTimeout(() => playTone(783.99, 'sine', 0.12, 0.25), 200); // G5
+            setTimeout(() => playTone(1046.50, 'sine', 0.25, 0.3), 300); // C6
+        }
+
+        function playWrongSound() {
+            if (isAudioMuted) return;
+            playTone(220, 'triangle', 0.15, 0.3); // A3
+            setTimeout(() => playTone(185, 'triangle', 0.25, 0.3), 150); // F#3
+        }
+
+        function playHintSound() {
+            if (isAudioMuted) return;
+            playTone(880, 'sine', 0.1, 0.15);
+            setTimeout(() => playTone(1174.66, 'sine', 0.15, 0.15), 80);
+        }
+
+        function toggleSound() {
+            isAudioMuted = !isAudioMuted;
+            document.getElementById('btn-sound').textContent = isAudioMuted ? '🔇' : '🔊';
+        }
+
+        /* ==========================================================================
+           4. TEXT-TO-SPEECH (Web Speech API)
+           ========================================================================== */
+        function speakText(text) {
+            if (isAudioMuted) return;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop prior speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85; // Slightly slower for primary ESL students
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakCurrentTarget() {
+            const currentItem = questionList[currentQuestionIndex];
+            if (currentItem) {
+                speakText(currentItem.name);
+            }
+        }
+
+        /* ==========================================================================
+           5. RICH 2D CHILDREN'S BOOK SVG ILLUSTRATION ENGINE
+           ========================================================================== */
+        function getShowSVG(svgType) {
+            // Helper SVG components
+            const tvBorder = `<rect width="100%" height="100%" fill="#1e293b"/>`;
+            
+            switch (svgType) {
+                case 'news':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Studio Background -->
+                        <rect width="400" height="300" fill="#1e1b4b"/>
+                        <circle cx="200" cy="120" r="140" fill="#312e81" opacity="0.6"/>
+                        <!-- World Map graphics -->
+                        <path d="M70,80 Q100,50 140,80 T200,90 T260,70 T330,90" fill="none" stroke="#6366f1" stroke-width="6" stroke-dasharray="12,6"/>
+                        <text x="200" y="50" font-family="Fredoka" font-size="22" font-weight="bold" fill="#facc15" text-anchor="middle">NEWS 24</text>
+                        
+                        <!-- News Desk -->
+                        <ellipse cx="200" cy="270" rx="160" ry="40" fill="#0284c7"/>
+                        <rect x="60" y="230" width="280" height="40" fill="#0369a1" rx="10"/>
+                        
+                        <!-- Anchor Person -->
+                        <!-- Hair -->
+                        <path d="M165,115 Q200,90 235,115 Q240,140 235,160 L165,160 Z" fill="#451a03"/>
+                        <!-- Head -->
+                        <circle cx="200" cy="140" r="32" fill="#fde047"/>
+                        <!-- Face Features -->
+                        <circle cx="188" cy="135" r="4" fill="#1e293b"/>
+                        <circle cx="212" cy="135" r="4" fill="#1e293b"/>
+                        <!-- Smile -->
+                        <path d="M190,150 Q200,160 210,150" fill="none" stroke="#b45309" stroke-width="3" stroke-linecap="round"/>
+                        <!-- Suit -->
+                        <path d="M160,172 L240,172 L250,240 L150,240 Z" fill="#1e3a8a"/>
+                        <!-- Shirt & Red Tie -->
+                        <polygon points="190,172 210,172 200,210" fill="#ffffff"/>
+                        <polygon points="197,172 203,172 205,215 200,222 195,215" fill="#dc2626"/>
+                        
+                        <!-- Microphone on desk -->
+                        <rect x="195" y="210" width="10" height="20" fill="#64748b" rx="3"/>
+                        <circle cx="200" cy="205" r="8" fill="#334155"/>
+                    </svg>`;
+
+                case 'weather':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Sky Background -->
+                        <rect width="400" height="300" fill="#38bdf8"/>
+                        <!-- Sun -->
+                        <circle cx="310" cy="80" r="45" fill="#facc15"/>
+                        <g stroke="#fef08a" stroke-width="5" stroke-linecap="round">
+                            <line x1="310" y1="20" x2="310" y2="10"/>
+                            <line x1="370" y1="80" x2="380" y2="80"/>
+                            <line x1="350" y1="40" x2="360" y2="30"/>
+                            <line x1="350" y1="120" x2="360" y2="130"/>
+                        </g>
+                        <!-- Cloud -->
+                        <path d="M80,100 Q100,70 130,80 Q160,60 190,80 Q220,90 210,120 Q200,140 160,140 L90,140 Q70,130 80,100 Z" fill="#ffffff"/>
+                        
+                        <!-- Raindrops -->
+                        <circle cx="110" cy="165" r="4" fill="#0284c7"/>
+                        <circle cx="140" cy="180" r="4" fill="#0284c7"/>
+                        <circle cx="170" cy="165" r="4" fill="#0284c7"/>
+
+                        <!-- Weather Presenter -->
+                        <path d="M70,190 L130,190 L140,300 L60,300 Z" fill="#047857"/>
+                        <circle cx="100" cy="155" r="28" fill="#fbcfe8"/>
+                        <!-- Hair -->
+                        <path d="M75,145 Q100,120 125,145 Q130,125 100,125 Z" fill="#78350f"/>
+                        <!-- Eyes & Smile -->
+                        <circle cx="92" cy="152" r="3" fill="#1e293b"/>
+                        <circle cx="110" cy="152" r="3" fill="#1e293b"/>
+                        <path d="M94,164 Q101,172 108,164" fill="none" stroke="#9d174d" stroke-width="2.5" stroke-linecap="round"/>
+                        
+                        <!-- Presenter Pointing Arm -->
+                        <path d="M120,195 L220,140" stroke="#fbcfe8" stroke-width="14" stroke-linecap="round"/>
+                        
+                        <!-- Temperature Badge -->
+                        <rect x="250" y="160" width="110" height="50" rx="15" fill="#ffffff" opacity="0.9"/>
+                        <text x="305" y="195" font-family="Fredoka" font-size="24" font-weight="bold" fill="#ea580c" text-anchor="middle">28°C ☀️</text>
+                    </svg>`;
+
+                case 'drama':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Stage Dark Background -->
+                        <rect width="400" height="300" fill="#31121d"/>
+                        <!-- Stage Spotlight -->
+                        <polygon points="200,0 100,300 300,300" fill="#fef08a" opacity="0.25"/>
+                        <rect x="0" y="240" width="400" height="60" fill="#881337"/>
+
+                        <!-- Crying/Emotional Actor -->
+                        <g transform="translate(130, 110)">
+                            <!-- Body -->
+                            <path d="M10,80 L50,80 L60,150 L0,150 Z" fill="#0284c7"/>
+                            <!-- Head -->
+                            <circle cx="30" cy="40" r="28" fill="#fde047"/>
+                            <!-- Sad Eyes -->
+                            <path d="M18,35 Q23,30 28,35" fill="none" stroke="#1e293b" stroke-width="3"/>
+                            <path d="M32,35 Q37,30 42,35" fill="none" stroke="#1e293b" stroke-width="3"/>
+                            <!-- Sad Mouth -->
+                            <path d="M22,55 Q30,46 38,55" fill="none" stroke="#b45309" stroke-width="3"/>
+                            <!-- Tear drops -->
+                            <circle cx="16" cy="42" r="3" fill="#38bdf8"/>
+                            <circle cx="14" cy="50" r="2" fill="#38bdf8"/>
+                        </g>
+
+                        <!-- Comforting Actor -->
+                        <g transform="translate(210, 105)">
+                            <!-- Body -->
+                            <path d="M10,80 L50,80 L60,150 L0,150 Z" fill="#7c3aed"/>
+                            <!-- Head -->
+                            <circle cx="30" cy="40" r="28" fill="#fed7aa"/>
+                            <circle cx="22" cy="36" r="3" fill="#1e293b"/>
+                            <circle cx="38" cy="36" r="3" fill="#1e293b"/>
+                            <!-- Gentle Mouth -->
+                            <path d="M24,52 Q30,58 36,52" fill="none" stroke="#7c2d12" stroke-width="3"/>
+                            <!-- Arm on shoulder -->
+                            <path d="M0,90 Q-20,70 -50,85" fill="none" stroke="#fed7aa" stroke-width="12" stroke-linecap="round"/>
+                        </g>
+
+                        <!-- Drama Masks Symbol -->
+                        <text x="350" y="50" font-size="30">🎭</text>
+                    </svg>`;
+
+                case 'gameshow':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Bright Studio Background -->
+                        <rect width="400" height="300" fill="#581c87"/>
+                        <circle cx="200" cy="150" r="130" fill="#7e22ce"/>
+                        
+                        <!-- Prize Wheel in background -->
+                        <g transform="translate(320, 100)">
+                            <circle cx="0" cy="0" r="55" fill="#facc15" stroke="#ffffff" stroke-width="4"/>
+                            <path d="M0,0 L55,0 A55,55 0 0,1 0,55 Z" fill="#ef4444"/>
+                            <path d="M0,0 L0,55 A55,55 0 0,1 -55,0 Z" fill="#3b82f6"/>
+                            <path d="M0,0 L-55,0 A55,55 0 0,1 0,-55 Z" fill="#10b981"/>
+                            <circle cx="0" cy="0" r="12" fill="#ffffff"/>
+                        </g>
+
+                        <!-- Contestant Podium with Big Buzzer -->
+                        <rect x="110" y="190" width="90" height="80" fill="#2563eb" rx="10"/>
+                        <ellipse cx="155" cy="190" rx="45" ry="12" fill="#1d4ed8"/>
+                        <!-- Giant Red Buzzer -->
+                        <ellipse cx="155" cy="184" rx="20" ry="8" fill="#ef4444"/>
+
+                        <!-- Happy Contestant -->
+                        <circle cx="155" cy="135" r="26" fill="#fde047"/>
+                        <circle cx="146" cy="130" r="3.5" fill="#1e293b"/>
+                        <circle cx="164" cy="130" r="3.5" fill="#1e293b"/>
+                        <path d="M145,144 Q155,156 165,144 Z" fill="#dc2626"/>
+
+                        <!-- Host with mic -->
+                        <path d="M10,200 L60,200 L70,300 L0,300 Z" fill="#dc2626"/>
+                        <circle cx="35" cy="150" r="25" fill="#fed7aa"/>
+                        <circle cx="28" cy="146" r="3" fill="#1e293b"/>
+                        <circle cx="42" cy="146" r="3" fill="#1e293b"/>
+                        <path d="M28,160 Q35,168 42,160" fill="none" stroke="#7c2d12" stroke-width="2.5"/>
+                        <!-- Mic -->
+                        <rect x="55" y="155" width="8" height="18" fill="#475569" rx="2" transform="rotate(-30 55 155)"/>
+
+                        <text x="200" y="50" font-family="Fredoka" font-size="26" font-weight="bold" fill="#fde047" text-anchor="middle">WIN $1000!</text>
+                    </svg>`;
+
+                case 'popmusic':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Concert Lights Background -->
+                        <rect width="400" height="300" fill="#0f172a"/>
+                        <!-- Light Beams -->
+                        <polygon points="50,0 0,300 120,300" fill="#ec4899" opacity="0.4"/>
+                        <polygon points="200,0 120,300 280,300" fill="#a855f7" opacity="0.4"/>
+                        <polygon points="350,0 280,300 400,300" fill="#06b6d4" opacity="0.4"/>
+
+                        <!-- Pop Star Singer -->
+                        <g transform="translate(160, 80)">
+                            <!-- Body/Outfit -->
+                            <path d="M20,100 L60,100 L75,200 L5,200 Z" fill="#ec4899"/>
+                            <!-- Cool Hair -->
+                            <path d="M0,40 Q40,-10 80,40 Q85,70 70,80 L10,80 Z" fill="#3b82f6"/>
+                            <!-- Head -->
+                            <circle cx="40" cy="45" r="26" fill="#fde047"/>
+                            <!-- Sunglasses -->
+                            <rect x="22" y="38" width="16" height="12" rx="3" fill="#0f172a"/>
+                            <rect x="42" y="38" width="16" height="12" rx="3" fill="#0f172a"/>
+                            <line x1="38" y1="42" x2="42" y2="42" stroke="#0f172a" stroke-width="3"/>
+                            <!-- Singing Mouth -->
+                            <ellipse cx="40" cy="62" rx="7" ry="5" fill="#991b1b"/>
+                            <!-- Microphone Stand -->
+                            <line x1="15" y1="65" x2="15" y2="200" stroke="#94a3b8" stroke-width="6"/>
+                            <circle cx="15" cy="60" r="10" fill="#64748b"/>
+                        </g>
+
+                        <!-- Musical Notes floating -->
+                        <text x="60" y="100" font-size="34" fill="#facc15">🎵</text>
+                        <text x="310" y="120" font-size="38" fill="#facc15">🎶</text>
+                        <text x="90" y="200" font-size="28" fill="#facc15">🎤</text>
+                    </svg>`;
+
+                case 'documentary':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Nature Savanna Sky & Sun -->
+                        <rect width="400" height="300" fill="#fef3c7"/>
+                        <circle cx="200" cy="160" r="110" fill="#fde047" opacity="0.6"/>
+                        
+                        <!-- Savanna Hill & Acacia Tree -->
+                        <path d="M0,220 Q200,180 400,220 L400,300 L0,300 Z" fill="#d97706"/>
+                        <!-- Silhouette Acacia Tree -->
+                        <path d="M70,220 L75,140 Q40,120 20,110 Q50,100 80,120 Q100,90 130,110 L85,140 L90,220 Z" fill="#78350f"/>
+
+                        <!-- Cute Safari Lion -->
+                        <g transform="translate(230, 140)">
+                            <!-- Mane -->
+                            <circle cx="50" cy="50" r="45" fill="#b45309"/>
+                            <!-- Face -->
+                            <circle cx="50" cy="50" r="30" fill="#fbbf24"/>
+                            <!-- Ears -->
+                            <circle cx="28" cy="28" r="10" fill="#fbbf24"/>
+                            <circle cx="72" cy="28" r="10" fill="#fbbf24"/>
+                            <!-- Eyes -->
+                            <circle cx="40" cy="45" r="4" fill="#1e293b"/>
+                            <circle cx="60" cy="45" r="4" fill="#1e293b"/>
+                            <!-- Snout & Nose -->
+                            <ellipse cx="50" cy="56" rx="8" ry="6" fill="#fef3c7"/>
+                            <polygon points="46,52 54,52 50,57" fill="#78350f"/>
+                            <!-- Body -->
+                            <path d="M25,80 L75,80 L80,130 L20,130 Z" fill="#fbbf24"/>
+                        </g>
+
+                        <!-- Camera REC Overlay -->
+                        <rect x="20" y="20" width="80" height="30" rx="8" fill="#dc2626" opacity="0.9"/>
+                        <text x="60" y="40" font-family="Fredoka" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">🔴 REC</text>
+                        <text x="340" y="40" font-size="24">📹</text>
+                    </svg>`;
+
+                case 'sportsshow':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Green Field -->
+                        <rect width="400" height="300" fill="#15803d"/>
+                        <!-- Field Lines -->
+                        <line x1="0" y1="200" x2="400" y2="200" stroke="#ffffff" stroke-width="5" opacity="0.7"/>
+                        <circle cx="200" cy="200" r="60" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.7"/>
+
+                        <!-- Goal Net outline -->
+                        <rect x="290" y="60" width="100" height="130" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="6,4"/>
+
+                        <!-- Soccer Player kicking -->
+                        <g transform="translate(100, 70)">
+                            <!-- Body -->
+                            <path d="M30,70 L70,70 L80,140 L20,140 Z" fill="#ea580c"/>
+                            <!-- Head -->
+                            <circle cx="50" cy="40" r="25" fill="#fde047"/>
+                            <circle cx="42" cy="36" r="3" fill="#1e293b"/>
+                            <circle cx="58" cy="36" r="3" fill="#1e293b"/>
+                            <path d="M42,48 Q50,56 58,48" fill="none" stroke="#b45309" stroke-width="2.5"/>
+                            <!-- Kicking Leg -->
+                            <path d="M70,130 L130,110" stroke="#fde047" stroke-width="14" stroke-linecap="round"/>
+                        </g>
+
+                        <!-- Soccer Ball in air -->
+                        <g transform="translate(260, 150)">
+                            <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+                            <polygon points="0,-8 7,-2 4,6 -4,6 -7,-2" fill="#1e293b"/>
+                        </g>
+
+                        <!-- Motion lines -->
+                        <path d="M210,170 Q230,155 240,152" fill="none" stroke="#fde047" stroke-width="4" stroke-dasharray="4,4"/>
+                        <text x="30" y="50" font-family="Fredoka" font-size="22" font-weight="bold" fill="#ffffff">GOAL! ⚽</text>
+                    </svg>`;
+
+                case 'cartoon':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Cheerful Rainbow / Fantasy Sky -->
+                        <rect width="400" height="300" fill="#f472b6"/>
+                        <path d="M-20,300 Q200,80 420,300" fill="none" stroke="#fde047" stroke-width="30"/>
+                        <path d="M-20,300 Q200,120 420,300" fill="none" stroke="#38bdf8" stroke-width="20"/>
+
+                        <!-- Cute Floating Bunny Cartoon Character -->
+                        <g transform="translate(150, 70)">
+                            <!-- Bunny Ears -->
+                            <ellipse cx="30" cy="-20" rx="12" ry="35" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+                            <ellipse cx="30" cy="-20" rx="6" ry="22" fill="#f472b6"/>
+                            <ellipse cx="70" cy="-20" rx="12" ry="35" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+                            <ellipse cx="70" cy="-20" rx="6" ry="22" fill="#f472b6"/>
+
+                            <!-- Head -->
+                            <circle cx="50" cy="40" r="40" fill="#ffffff"/>
+                            <!-- Big Cartoon Eyes -->
+                            <ellipse cx="35" cy="35" rx="8" ry="12" fill="#1e293b"/>
+                            <circle cx="33" cy="30" r="3" fill="#ffffff"/>
+                            <ellipse cx="65" cy="35" rx="8" ry="12" fill="#1e293b"/>
+                            <circle cx="63" cy="30" r="3" fill="#ffffff"/>
+                            <!-- Cute Nose & Mouth -->
+                            <polygon points="47,48 53,48 50,52" fill="#f472b6"/>
+                            <path d="M43,55 Q50,62 57,55" fill="none" stroke="#475569" stroke-width="2.5"/>
+
+                            <!-- Cute Body & Balloons -->
+                            <ellipse cx="50" cy="100" rx="28" ry="30" fill="#ffffff"/>
+                        </g>
+
+                        <!-- Balloons -->
+                        <circle cx="90" cy="80" r="22" fill="#ef4444"/>
+                        <line x1="90" y1="102" x2="160" y2="150" stroke="#ffffff" stroke-width="2"/>
+                        <circle cx="310" cy="90" r="24" fill="#3b82f6"/>
+                        <line x1="310" y1="114" x2="240" y2="150" stroke="#ffffff" stroke-width="2"/>
+                    </svg>`;
+
+                case 'cookingshow':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Bright Kitchen Background -->
+                        <rect width="400" height="300" fill="#fef3c7"/>
+                        <!-- Kitchen Tiles -->
+                        <line x1="0" y1="150" x2="400" y2="150" stroke="#fde047" stroke-width="3"/>
+                        
+                        <!-- Countertop -->
+                        <rect x="0" y="210" width="400" height="90" fill="#fb923c"/>
+                        <rect x="0" y="200" width="400" height="15" fill="#fed7aa"/>
+
+                        <!-- Friendly Chef -->
+                        <g transform="translate(140, 40)">
+                            <!-- Body / Apron -->
+                            <path d="M20,110 L100,110 L110,180 L10,180 Z" fill="#ffffff"/>
+                            <rect x="35" y="125" width="50" height="55" fill="#ef4444" rx="5"/>
+
+                            <!-- Head -->
+                            <circle cx="60" cy="75" r="28" fill="#fde047"/>
+                            <circle cx="50" cy="70" r="3.5" fill="#1e293b"/>
+                            <circle cx="70" cy="70" r="3.5" fill="#1e293b"/>
+                            <path d="M50,85 Q60,95 70,85" fill="none" stroke="#b45309" stroke-width="3"/>
+
+                            <!-- Chef Hat -->
+                            <path d="M35,52 Q20,30 40,20 Q60,5 80,20 Q100,30 85,52 Z" fill="#ffffff"/>
+                            <rect x="35" y="48" width="50" height="12" fill="#e2e8f0" rx="3"/>
+                        </g>
+
+                        <!-- Cooking Pot with Steam -->
+                        <rect x="250" y="170" width="80" height="45" fill="#475569" rx="8"/>
+                        <!-- Steam lines -->
+                        <path d="M270,160 Q265,140 275,125" fill="none" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M290,160 Q295,140 285,125" fill="none" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M310,160 Q305,140 315,125" fill="none" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+
+                        <!-- Vegetables on counter -->
+                        <circle cx="80" cy="192" r="10" fill="#ef4444"/> <!-- Tomato -->
+                        <path d="M100,198 L125,185 L120,198 Z" fill="#f97316"/> <!-- Carrot -->
+                    </svg>`;
+
+                case 'travelshow':
+                    return `
+                    <svg viewBox="0 0 400 300" class="w-full h-full object-contain" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Ocean & Beach Sky Background -->
+                        <rect width="400" height="300" fill="#38bdf8"/>
+                        <!-- Sun -->
+                        <circle cx="70" cy="70" r="35" fill="#facc15"/>
+                        <!-- Island Beach & Sea -->
+                        <path d="M0,210 Q200,180 400,210 L400,300 L0,300 Z" fill="#fef08a"/>
+                        <path d="M0,240 Q200,220 400,240 L400,300 L0,300 Z" fill="#0284c7" opacity="0.4"/>
+
+                        <!-- Palm Tree -->
+                        <path d="M330,220 Q310,150 340,100" fill="none" stroke="#78350f" stroke-width="12"/>
+                        <!-- Leaves -->
+                        <path d="M340,100 Q290,80 270,110" fill="none" stroke="#15803d" stroke-width="8" stroke-linecap="round"/>
+                        <path d="M340,100 Q380,70 390,100" fill="none" stroke="#15803d" stroke-width="8" stroke-linecap="round"/>
+                        <path d="M340,100 Q340,50 310,40" fill="none" stroke="#15803d" stroke-width="8" stroke-linecap="round"/>
+
+                        <!-- Travel Presenter with Backpack -->
+                        <g transform="translate(160, 110)">
+                            <!-- Backpack -->
+                            <rect x="5" y="45" width="20" height="40" rx="5" fill="#dc2626"/>
+                            <!-- Body -->
+                            <path d="M20,40 L60,40 L65,110 L15,110 Z" fill="#16a34a"/>
+                            <!-- Head -->
+                            <circle cx="40" cy="18" r="22" fill="#fed7aa"/>
+                            <!-- Sun hat -->
+                            <path d="M10,12 L70,12" stroke="#d97706" stroke-width="6" stroke-linecap="round"/>
+                            <path d="M25,12 Q40,-5 55,12 Z" fill="#d97706"/>
+                            <!-- Smile -->
+                            <circle cx="33" cy="18" r="3" fill="#1e293b"/>
+                            <circle cx="47" cy="18" r="3" fill="#1e293b"/>
+                            <path d="M33,26 Q40,32 47,26" fill="none" stroke="#7c2d12" stroke-width="2"/>
+                        </g>
+
+                        <!-- Airplane in sky -->
+                        <g transform="translate(220, 40) rotate(-10)">
+                            <path d="M0,10 L30,0 L40,10 L30,12 L15,25 L10,25 L16,12 L0,10 Z" fill="#ffffff"/>
+                        </g>
+                    </svg>`;
+
+                default:
+                    return `<div class="text-white font-heading text-2xl">TV Show Picture</div>`;
+            }
+        }
+
+        /* ==========================================================================
+           6. SCREEN NAVIGATION & LEVEL STARTERS
+           ========================================================================== */
+        function showScreen(screenId) {
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-end').classList.add('hidden');
+
+            document.getElementById(screenId).classList.remove('hidden');
+            if (screenId === 'screen-game') {
+                document.getElementById('screen-game').classList.add('flex');
+            }
+        }
+
+        function goToHome() {
+            showScreen('screen-home');
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function startLevel(levelNum) {
+            currentLevel = levelNum;
+            currentQuestionIndex = 0;
+            questionList = shuffleArray(TV_SHOWS);
+            
+            showScreen('screen-game');
+            loadQuestion();
+        }
+
+        /* ==========================================================================
+           7. QUESTION RENDERER & LEVEL CONTROLLER
+           ========================================================================== */
+        function loadQuestion() {
+            // Hide feedback & next button
+            const feedback = document.getElementById('feedback-banner');
+            feedback.classList.add('hidden');
+            document.getElementById('btn-next').classList.add('hidden');
+
+            // Reset control sections
+            document.getElementById('control-level1').classList.add('hidden');
+            document.getElementById('control-level2').classList.add('hidden');
+            document.getElementById('control-level3').classList.add('hidden');
+            document.getElementById('control-level4').classList.add('hidden');
+
+            const item = questionList[currentQuestionIndex];
+            
+            // Update progress & TV image
+            document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / questionList.length) * 100}%`;
+            document.getElementById('progress-text').textContent = `${currentQuestionIndex + 1} / ${questionList.length}`;
+            document.getElementById('tv-screen-content').innerHTML = getShowSVG(item.svgType);
+
+            // Configure current Level layout
+            if (currentLevel === 1) {
+                setupLevel1(item);
+            } else if (currentLevel === 2) {
+                setupLevel2(item);
+            } else if (currentLevel === 3) {
+                setupLevel3(item);
+            } else if (currentLevel === 4) {
+                setupLevel4(item);
+            }
+        }
+
+        /* ==========================================================================
+           LEVEL 1: GUESS THE SHOW (Multiple Choice)
+           ========================================================================== */
+        function setupLevel1(item) {
+            level1Answered = false;
+            document.getElementById('level-badge').textContent = 'Level 1';
+            document.getElementById('question-prompt').textContent = 'What show is it?';
+            document.getElementById('control-level1').classList.remove('hidden');
+
+            // Combine correct answer + 2 distractors & shuffle
+            const choices = shuffleArray([item.name, ...item.distractors]);
+
+            for (let i = 0; i < 3; i++) {
+                const btn = document.getElementById(`opt-${i}`);
+                btn.textContent = `${String.fromCharCode(65 + i)}. ${choices[i]}`;
+                btn.dataset.answer = choices[i];
+                btn.disabled = false;
+                btn.className = "opt-btn bg-white hover:bg-sky-50 text-slate-800 border-4 border-sky-300 hover:border-sky-500 p-4 rounded-2xl font-heading text-lg sm:text-xl shadow-md btn-bounce text-center";
+            }
+        }
+
+        function checkLevel1(choiceIdx) {
+            if (level1Answered) return;
+            
+            const selectedBtn = document.getElementById(`opt-${choiceIdx}`);
+            const selectedAnswer = selectedBtn.dataset.answer;
+            const currentItem = questionList[currentQuestionIndex];
+
+            if (selectedAnswer === currentItem.name) {
+                level1Answered = true;
+                playCorrectSound();
+                triggerConfetti();
+                score += 10;
+                updateScoreDisplay();
+
+                selectedBtn.className = "opt-btn bg-emerald-500 text-white border-4 border-emerald-700 p-4 rounded-2xl font-heading text-lg sm:text-xl shadow-md text-center animate-pop-in";
+                showFeedback("🎉 Great job! Correct!", "success");
+                speakText(`Great job! It is ${currentItem.name}`);
+                
+                document.getElementById('btn-next').classList.remove('hidden');
+            } else {
+                playWrongSound();
+                selectedBtn.className = "opt-btn bg-rose-100 text-rose-700 border-4 border-rose-400 p-4 rounded-2xl font-heading text-lg sm:text-xl shadow-md text-center animate-shake";
+                showFeedback("😊 Try again!", "error");
+                speakText("Try again!");
+            }
+        }
+
+        /* ==========================================================================
+           LEVEL 2: SPELL THE SHOW (Interactive Typing & Letter Tiles)
+           ========================================================================== */
+        function setupLevel2(item) {
+            hintClickCount = 0;
+            userSpellingText = "";
+            document.getElementById('level-badge').textContent = 'Level 2';
+            document.getElementById('question-prompt').textContent = 'Write the show:';
+            document.getElementById('control-level2').classList.remove('hidden');
+
+            document.getElementById('spelling-input').value = "";
+            updateSpellingDisplay();
+            renderLetterBank(item.name);
+        }
+
+        function renderLetterBank(targetPhrase) {
+            const letterBankContainer = document.getElementById('letter-bank');
+            letterBankContainer.innerHTML = "";
+
+            // Collect unique letters from phrase + extra vowels/consonants
+            const alphabet = "abcdefghijklmnopqrstuvwxyz";
+            let letterSet = new Set(targetPhrase.replace(/\s+/g, '').split(''));
+            while (letterSet.size < 14) {
+                const randomChar = alphabet[Math.floor(Math.random() * alphabet.length)];
+                letterSet.add(randomChar);
+            }
+
+            const shuffledLetters = shuffleArray(Array.from(letterSet));
+
+            // Space button tile
+            const spaceBtn = document.createElement('button');
+            spaceBtn.textContent = '⎵ Space';
+            spaceBtn.className = 'key-tile bg-white border-2 border-slate-300 hover:bg-sky-100 text-slate-800 px-3 py-2 rounded-xl text-sm font-bold shadow-sm btn-bounce';
+            spaceBtn.onclick = () => appendSpellingChar(' ');
+            letterBankContainer.appendChild(spaceBtn);
+
+            // Letter tiles
+            shuffledLetters.forEach(lettr => {
+                const tile = document.createElement('button');
+                tile.textContent = lettr;
+                tile.className = 'key-tile bg-white border-2 border-slate-300 hover:bg-sky-100 text-slate-800 text-lg sm:text-xl font-heading px-3.5 py-1.5 rounded-xl shadow-sm btn-bounce';
+                tile.onclick = () => appendSpellingChar(lettr);
+                letterBankContainer.appendChild(tile);
+            });
+
+            // Backspace tile
+            const backBtn = document.createElement('button');
+            backBtn.textContent = '⌫ Back';
+            backBtn.className = 'key-tile bg-rose-100 border-2 border-rose-300 text-rose-800 px-3 py-2 rounded-xl text-sm font-bold shadow-sm btn-bounce';
+            backBtn.onclick = () => removeSpellingChar();
+            letterBankContainer.appendChild(backBtn);
+        }
+
+        function appendSpellingChar(char) {
+            userSpellingText += char;
+            document.getElementById('spelling-input').value = userSpellingText;
+            updateSpellingDisplay();
+        }
+
+        function removeSpellingChar() {
+            userSpellingText = userSpellingText.slice(0, -1);
+            document.getElementById('spelling-input').value = userSpellingText;
+            updateSpellingDisplay();
+        }
+
+        function handleSpellingInput(e) {
+            userSpellingText = e.target.value;
+            updateSpellingDisplay();
+            if (e.key === 'Enter') {
+                checkLevel2();
+            }
+        }
+
+        function clearSpellingInput() {
+            userSpellingText = "";
+            document.getElementById('spelling-input').value = "";
+            updateSpellingDisplay();
+        }
+
+        function updateSpellingDisplay() {
+            const displayEl = document.getElementById('spelling-display');
+            if (userSpellingText.trim() === "") {
+                displayEl.innerHTML = `<span class="text-slate-400 font-normal italic text-lg">Click letters below or type...</span>`;
+            } else {
+                displayEl.textContent = userSpellingText;
+            }
+        }
+
+        function showSpellingHint() {
+            playHintSound();
+            hintClickCount++;
+            const currentItem = questionList[currentQuestionIndex];
+            const name = currentItem.name;
+
+            if (hintClickCount === 1) {
+                // Show first letter of each word
+                const wordsHint = name.split(' ').map(w => w[0] + ' _ '.repeat(w.length - 1)).join('   ');
+                showFeedback(`💡 Hint 1: First letters -> ${wordsHint}`, "hint");
+            } else if (hintClickCount === 2) {
+                // Show word count and total length
+                const wordCount = name.split(' ').length;
+                showFeedback(`💡 Hint 2: Total ${wordCount} words (${name.length} characters)`, "hint");
+            } else {
+                // Fill in target
+                showFeedback(`💡 Hint 3: Phrase starts with "${currentItem.hintText}"`, "hint");
+            }
+        }
+
+        function checkLevel2() {
+            const currentItem = questionList[currentQuestionIndex];
+            const cleanUser = userSpellingText.trim().toLowerCase().replace(/\s+/g, ' ');
+            const cleanTarget = currentItem.name.toLowerCase();
+
+            if (cleanUser === cleanTarget) {
+                playCorrectSound();
+                triggerConfetti();
+                score += 10;
+                updateScoreDisplay();
+
+                showFeedback("🌟 Excellent Spelling! You got it right!", "success");
+                speakText(`Excellent! ${currentItem.name}`);
+                document.getElementById('btn-next').classList.remove('hidden');
+            } else {
+                playWrongSound();
+                showFeedback("😊 Almost! Check your spelling and try again!", "error");
+                speakText("Try again!");
+            }
+        }
+
+        /* ==========================================================================
+           LEVEL 3: DESCRIBE THE SHOW (Adjectives)
+           ========================================================================== */
+        function setupLevel3(item) {
+            level3Answered = false;
+            document.getElementById('level-badge').textContent = 'Level 3';
+            document.getElementById('question-prompt').textContent = 'How is the show?';
+            document.getElementById('control-level3').classList.remove('hidden');
+        }
+
+        function checkLevel3(chosenAdjective) {
+            if (level3Answered) return;
+
+            const currentItem = questionList[currentQuestionIndex];
+            const isAcceptable = currentItem.validAdjectives.includes(chosenAdjective);
+
+            if (isAcceptable) {
+                level3Answered = true;
+                playCorrectSound();
+                triggerConfetti();
+                score += 10;
+                updateScoreDisplay();
+
+                showFeedback(`🌟 Super! ${currentItem.name} is ${chosenAdjective}!`, "success");
+                speakText(`Super! ${currentItem.name} is ${chosenAdjective}`);
+                document.getElementById('btn-next').classList.remove('hidden');
+            } else {
+                playWrongSound();
+                showFeedback(`🤔 Think again! Is ${currentItem.name} really ${chosenAdjective}?`, "error");
+                speakText(`Try choosing another adjective!`);
+            }
+        }
+
+        /* ==========================================================================
+           FINAL CHALLENGE: MY TV REVIEW & SENTENCE BUILDER
+           ========================================================================== */
+        function setupLevel4(item) {
+            document.getElementById('level-badge').textContent = 'Final Challenge';
+            document.getElementById('question-prompt').textContent = 'Write My TV Review';
+            document.getElementById('control-level4').classList.remove('hidden');
+
+            document.getElementById('review-show-select').value = "";
+            document.getElementById('review-adj-select').value = "";
+        }
+
+        function checkLevel4() {
+            const showVal = document.getElementById('review-show-select').value;
+            const adjVal = document.getElementById('review-adj-select').value;
+
+            if (!showVal || !adjVal) {
+                playWrongSound();
+                showFeedback("⚠️ Please choose both a TV show and an adjective!", "error");
+                return;
+            }
+
+            const currentItem = questionList[currentQuestionIndex];
+            userReviewData = {
+                actualShow: currentItem.name,
+                userShow: showVal,
+                userAdj: adjVal
+            };
+
+            playCorrectSound();
+            triggerConfetti();
+            score += 10;
+            updateScoreDisplay();
+
+            const reviewSentence = `It is ${showVal}. It is ${adjVal}.`;
+            speakText(reviewSentence);
+
+            // Show end victory screen
+            setTimeout(() => {
+                finishGame();
+            }, 1200);
+        }
+
+        /* ==========================================================================
+           8. NAVIGATION, FEEDBACK & SCORE MANAGEMENT
+           ========================================================================== */
+        function showFeedback(msg, type) {
+            const feedback = document.getElementById('feedback-banner');
+            feedback.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'border-emerald-400', 'bg-rose-100', 'text-rose-800', 'border-rose-400', 'bg-amber-100', 'text-amber-800', 'border-amber-400');
+
+            if (type === 'success') {
+                feedback.classList.add('bg-emerald-100', 'text-emerald-800', 'border-2', 'border-emerald-400');
+            } else if (type === 'error') {
+                feedback.classList.add('bg-rose-100', 'text-rose-800', 'border-2', 'border-rose-400');
+            } else {
+                feedback.classList.add('bg-amber-100', 'text-amber-800', 'border-2', 'border-amber-400');
+            }
+
+            feedback.textContent = msg;
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-display').textContent = score;
+        }
+
+        function tryAgainCurrent() {
+            loadQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questionList.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                // Level completed -> Advance to next level or finish
+                if (currentLevel < 4) {
+                    currentLevel++;
+                    currentQuestionIndex = 0;
+                    questionList = shuffleArray(TV_SHOWS);
+                    loadQuestion();
+                } else {
+                    finishGame();
+                }
+            }
+        }
+
+        function finishGame() {
+            showScreen('screen-end');
+            
+            const totalScoreText = `${score} / 310`;
+            document.getElementById('final-score-text').textContent = totalScoreText;
+
+            // Generate review card summary if available
+            const reviewContainer = document.getElementById('review-cards-container');
+            if (userReviewData) {
+                reviewContainer.classList.remove('hidden');
+                reviewContainer.innerHTML = `
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 shadow-sm">
+                        <div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Your TV Review Card</div>
+                        <p class="font-heading text-lg text-slate-800">"It is ${userReviewData.userShow}. It is ${userReviewData.userAdj}."</p>
+                    </div>
+                `;
+            } else {
+                reviewContainer.classList.add('hidden');
+            }
+        }
+
+        /* ==========================================================================
+           9. VISUAL CONFETTI ANIMATION SYSTEM
+           ========================================================================== */
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+
+            for (let i = 0; i < 60; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 16,
+                    vy: (Math.random() - 0.7) * 16,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1.0
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    if (p.life > 0) {
+                        alive = true;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.3; // Gravity
+                        p.life -= 0.025;
+
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = Math.max(0, p.life);
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+
+                if (alive) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            animate();
+        }
+
+        // Initialize default screen on load
+        window.onload = function() {
+            showScreen('screen-home');
+        };
+    </script>
+</body>
+</html>
